@@ -1,0 +1,125 @@
+/mnt/rstor/genetics/Wynshaw-BorisLab/lab139/R-4.1.2/bin/R
+
+library(Seurat)
+library(data.table)
+library(Matrix)
+library(sctransform)
+library(dplyr)
+library(RColorBrewer)
+library(ggplot2)
+library(patchwork)
+library(DoubletFinder)
+library(ROCR)
+library(fields)
+library(KernSmooth)
+library(parallel)
+
+setwd("/mnt/rstor/genetics/Wynshaw-BorisLab/lab139/analysis_w_newref/clay_16wk_si_dob20210816/")
+clay1_16wk_si <- readRDS("/mnt/rstor/genetics/Wynshaw-BorisLab/lab139/analysis_w_newref/clay_16wk_si_dob20210816/2022_12_02_clay1_cellbender_afterRead10x_h5.rds")
+clay1_16wk_si <- CreateSeuratObject(counts = clay1_16wk_si, project = "clay1_16wk_si")
+clay1_16wk_si[["percent.mt"]] <- PercentageFeatureSet(clay1_16wk_si, pattern = "^MT-")
+clay1_16wk_si <- subset(clay1_16wk_si, subset = nFeature_RNA > 1250 & nFeature_RNA < 7500 & percent.mt < 15) 
+clay1_16wk_si <- SCTransform(clay1_16wk_si, vst.flavor = "v2", vars.to.regress = "percent.mt")
+
+setwd("/mnt/rstor/genetics/Wynshaw-BorisLab/lab139/analysis_w_newref/clay_16wk_si_dob20220211/")
+clay2_16wk_si <- readRDS("/mnt/rstor/genetics/Wynshaw-BorisLab/lab139/analysis_w_newref/clay_16wk_si_dob20220211/clay_16wk_si_dob20220211_raw_feature_bc_matrix_cellbender_filtered.rds")
+clay2_16wk_si <- CreateSeuratObject(counts = clay2_16wk_si, project = "clay2_16wk_si")
+clay2_16wk_si[["percent.mt"]] <- PercentageFeatureSet(clay2_16wk_si, pattern = "^MT-")
+clay2_16wk_si <- subset(clay2_16wk_si, subset = nFeature_RNA > 1250 & nFeature_RNA < 6000 & percent.mt < 15) 
+clay2_16wk_si <- SCTransform(clay2_16wk_si, vst.flavor = "v2", vars.to.regress = "percent.mt")
+
+merge.list <- list(clay1_16wk_si, clay2_16wk_si)
+features <- SelectIntegrationFeatures(object.list = merge.list, nfeatures = 3004)
+features <- features[-grep(pattern = "ZsGreen|TdTomato|Cre|Dre", x = features)]
+merge.list <- PrepSCTIntegration(object.list = merge.list, anchor.features = features)
+merge.anchors <- FindIntegrationAnchors(object.list = merge.list, normalization.method = "SCT", anchor.features = features)
+merge.combined <- IntegrateData(anchorset = merge.anchors, normalization.method = "SCT")
+merge.combined <- RunPCA(merge.combined, verbose = FALSE)
+ElbowPlot(merge.combined, 50)
+merge.combined <- FindNeighbors(merge.combined, dims = 1:40)
+merge.combined <- FindClusters(merge.combined, resolution = 1.5)
+merge.combined <- RunUMAP(merge.combined, dims = 1:40)
+
+
+setwd("/mnt/rstor/genetics/Wynshaw-BorisLab/lab139/analysis_w_newref/paper_rerun/")
+saveRDS(merge.combined, file = "/mnt/rstor/genetics/Wynshaw-BorisLab/lab139/analysis_w_newref/paper_rerun/clay16wkSI_combined_beforePrepSCT_cellbender_ltsremoved.rds")
+merge.combined.prep <- PrepSCTFindMarkers(merge.combined)
+saveRDS(merge.combined.prep, file = "/mnt/rstor/genetics/Wynshaw-BorisLab/lab139/analysis_w_newref/paper_rerun/clay16wkSI_combined_afterPrepSCT_cellbender_ltsremoved.rds")
+merge.combined.markers <- FindAllMarkers(merge.combined.prep, assay = "SCT", only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+
+
+
+
+
+#Supplemental Table 1 = "clay16wkSI_combined_markers_cellbender_ltsremoved.csv"
+
+write.csv(merge.combined.markers, file = "clay16wkSI_combined_markers_cellbender_ltsremoved.csv")
+
+
+
+
+
+
+#Supplemental Table 2 = "clay16wkSI_red_v_yellow_markers_rna_cellbender_noLTS_thresh0.csv"
+
+DefaultAssay(merge.combined.prep) <- "RNA"
+Idents(object = merge.combined.prep) <- "seurat_clusters"
+ul <- subset(x = merge.combined.prep, idents = c(1,3,4,7,8,15,18,19))
+tdtom_ul <- subset(x = ul, subset = TdTomato > 0)
+UL_zsgreenpos <- subset(x = tdtom_ul, subset = ZsGreen > 0)
+UL_zsgreenneg <- subset(x = tdtom_ul, subset = ZsGreen == 0)
+UL_zsgreenpos [["zsgreen"]] <- "pos"
+UL_zsgreenneg [["zsgreen"]] <- "neg"
+zsgreen_posneg <- merge(x = UL_zsgreenpos, y = UL_zsgreenneg, project = "zsgreen_posneg", merge.data = TRUE)
+Idents(object = zsgreen_posneg) <- "zsgreen"
+DefaultAssay(zsgreen_posneg) <- "SCT"
+zsgreen_ULneuron.markers <- FindMarkers(object = zsgreen_posneg, logfc.threshold = 0, assay = "SCT", ident.1 = "pos", ident.2 = "neg", recorrect_umi = FALSE)
+write.csv(zsgreen_ULneuron.markers, file = "clay16wkSI_red_v_yellow_markers_rna_cellbender_noLTS_thresh0.csv")
+
+
+
+
+
+
+#Supplemental Table 3 = "clay16wkSI_red_v_yellow_cluster1_markers_rna_cellbender_noLTS_thresh0.csv"
+
+DefaultAssay(merge.combined.prep) <- "RNA"
+Idents(object = merge.combined.prep) <- "seurat_clusters"
+ul <- subset(x = merge.combined.prep, idents = c(1))
+tdtom_ul <- subset(x = ul, subset = TdTomato > 0)
+UL_zsgreenpos <- subset(x = tdtom_ul, subset = ZsGreen > 0)
+UL_zsgreenneg <- subset(x = tdtom_ul, subset = ZsGreen == 0)
+UL_zsgreenpos [["zsgreen"]] <- "pos"
+UL_zsgreenneg [["zsgreen"]] <- "neg"
+zsgreen_posneg <- merge(x = UL_zsgreenpos, y = UL_zsgreenneg, project = "zsgreen_posneg", merge.data = TRUE)
+Idents(object = zsgreen_posneg) <- "zsgreen"
+DefaultAssay(zsgreen_posneg) <- "SCT"
+zsgreen_ULneuron.markers <- FindMarkers(object = zsgreen_posneg, logfc.threshold = 0, assay = "SCT", ident.1 = "pos", ident.2 = "neg", recorrect_umi = FALSE)
+write.csv(zsgreen_ULneuron.markers, file = "clay16wkSI_red_v_yellow_cluster1_markers_rna_cellbender_noLTS_thresh0.csv")
+
+
+
+
+
+
+
+#data for Supplemental Fig. 5D = "clay16wkSI_random_ULneuron_markers_rna_cellbender_noLTS_thresh0.csv"
+
+DefaultAssay(merge.combined.prep) <- "RNA"
+Idents(object = merge.combined.prep) <- "seurat_clusters"
+ul <- subset(x = merge.combined.prep, idents = c(1,3,4,7,8,15,18,19))
+tdtom_ul <- subset(x = ul, subset = TdTomato > 0)
+set.seed(5)
+UL_zsgreenpos <- tdtom_ul[, sample(colnames(tdtom_ul), size = 1118, replace=F)]
+toRemove <- WhichCells(UL_zsgreenpos)
+UL_zsgreenneg <- tdtom_ul[,!colnames(tdtom_ul) %in% toRemove]
+UL_zsgreenpos [["zsgreen"]] <- "pos"
+UL_zsgreenneg [["zsgreen"]] <- "neg"
+zsgreen_posneg <- merge(x = UL_zsgreenpos, y = UL_zsgreenneg, project = "zsgreen_posneg", merge.data = TRUE)
+Idents(object = zsgreen_posneg) <- "zsgreen"
+DefaultAssay(zsgreen_posneg) <- "SCT"
+zsgreen_ULneuron.markers <- FindMarkers(object = zsgreen_posneg, logfc.threshold = 0, assay = "SCT", ident.1 = "pos", ident.2 = "neg", recorrect_umi = FALSE)
+write.csv(zsgreen_ULneuron.markers, file = "clay16wkSI_random_ULneuron_markers_rna_cellbender_noLTS_thresh0.csv")
+
+
+
