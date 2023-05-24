@@ -1,0 +1,175 @@
+#analysis for each experiment was run independently
+
+#CellBender - control 1
+
+conda create -n CellBender python=3.7
+conda activate CellBender
+
+conda install -c anaconda pytables
+
+conda install pytorch torchvision -c pytorch
+
+git clone https://github.com/broadinstitute/CellBender.git
+pip install -e CellBender
+
+cd /mnt/rstor/genetics/Wynshaw-BorisLab/lab139/analysis_w_newref/clay_16wk_si_dob20210816/
+
+###input is raw_feature_bc_matrix.h5 file. Low-count-threshold is what exclude low UMI droplets
+cellbender remove-background \
+                 --input clay1_raw_feature_bc_matrix.h5 \
+                 --output clay1_raw_feature_bc_matrix_cellbender.h5 \
+                 --expected-cells 10000 \
+                 --total-droplets-included 20000 \
+                 --low-count-threshold 150 \
+                 --epochs 150 
+
+
+
+
+
+
+#CellBender - control 2
+
+conda create -n CellBender python=3.7
+conda activate CellBender
+
+conda install -c anaconda pytables
+
+conda install pytorch torchvision -c pytorch
+
+git clone https://github.com/broadinstitute/CellBender.git
+pip install -e CellBender
+
+cd /mnt/rstor/genetics/Wynshaw-BorisLab/lab139/analysis_w_newref/clay_16wk_si_dob20220211/
+
+###input is raw_feature_bc_matrix.h5 file. Low-count-threshold is what exclude low UMI droplets
+cellbender remove-background \
+                 --input raw_feature_bc_matrix.h5 \
+                 --output raw_feature_bc_matrix_cellbender.h5 \
+                 --expected-cells 10000 \
+                 --total-droplets-included 20000 \
+                 --low-count-threshold 200 \
+                 --epochs 150 
+
+
+
+
+
+
+#CellBender - WT/WT - 10wk
+
+cd /mnt/rstor/genetics/Wynshaw-BorisLab/lab139/analysis_w_newref/correction_10wk_ali_dob20220603/
+
+conda create -n CellBender python=3.7
+conda activate CellBender
+
+conda install -c anaconda pytables
+
+conda install pytorch torchvision -c pytorch
+
+git clone https://github.com/broadinstitute/CellBender.git
+pip install -e CellBender
+
+cd /mnt/rstor/genetics/Wynshaw-BorisLab/lab139/analysis_w_newref/correction_10wk_ali_dob20220603/
+
+###input is raw_feature_bc_matrix.h5 file. Low-count-threshold is what exclude low UMI droplets
+cellbender remove-background \
+                 --input correction_10wk_ali_dob20220603_raw_feature_bc_matrix.h5 \
+                 --output correction_10wk_ali_dob20220603_raw_feature_bc_matrix_cellbender.h5 \
+                 --expected-cells 10000 \
+                 --total-droplets-included 24000 \
+                 --low-count-threshold 300 \
+                 --epochs 150 
+
+
+
+
+
+
+
+#CellBender - WT/Q76* - 10wk
+
+cd /mnt/rstor/genetics/Wynshaw-BorisLab/lab139/analysis_w_newref/arch_10wk_ali_dob20220603/
+
+conda create -n CellBender python=3.7
+conda activate CellBender
+
+conda install -c anaconda pytables
+
+conda install pytorch torchvision -c pytorch
+
+git clone https://github.com/broadinstitute/CellBender.git
+pip install -e CellBender
+
+cd /mnt/rstor/genetics/Wynshaw-BorisLab/lab139/analysis_w_newref/arch_10wk_ali_dob20220603/
+
+###input is raw_feature_bc_matrix.h5 file. Low-count-threshold is what exclude low UMI droplets
+cellbender remove-background \
+                 --input arch_10wk_ali_dob20220603_raw_feature_bc_matrix.h5 \
+                 --output arch_10wk_ali_dob20220603_raw_feature_bc_matrix_cellbender.h5 \
+                 --expected-cells 10000 \
+                 --total-droplets-included 23000 \
+                 --low-count-threshold 200 \
+                 --epochs 150 
+
+
+
+
+
+
+
+#CellBender - WT/WT - 20wk
+
+cd /mnt/rstor/genetics/Wynshaw-BorisLab/lab139/analysis_w_newref/correction_20wk_ali_dob20220603/
+
+conda create -n CellBender python=3.7
+conda activate CellBender
+
+conda install -c anaconda pytables
+
+conda install pytorch torchvision -c pytorch
+
+git clone https://github.com/broadinstitute/CellBender.git
+pip install -e CellBender
+
+cd /mnt/rstor/genetics/Wynshaw-BorisLab/lab139/analysis_w_newref/correction_20wk_ali_dob20220603/
+
+###input is raw_feature_bc_matrix.h5 file. Low-count-threshold is what exclude low UMI droplets
+cellbender remove-background \
+                 --input correction_20wk_ali_dob20220603_raw_feature_bc_matrix.h5 \
+                 --output correction_20wk_ali_dob20220603_raw_feature_bc_matrix_cellbender.h5 \
+                 --expected-cells 10000 \
+                 --total-droplets-included 22000 \
+                 --low-count-threshold 300 \
+                 --epochs 150 
+
+
+
+
+
+
+#CellBender - WT/Q76* - 20wk
+
+cd /mnt/rstor/genetics/Wynshaw-BorisLab/lab139/analysis_w_newref/arch_20wk_ali_dob20220603/
+
+conda create -n CellBender python=3.7
+conda activate CellBender
+
+conda install -c anaconda pytables
+
+conda install pytorch torchvision -c pytorch
+
+git clone https://github.com/broadinstitute/CellBender.git
+pip install -e CellBender
+
+cd /mnt/rstor/genetics/Wynshaw-BorisLab/lab139/analysis_w_newref/arch_20wk_ali_dob20220603/
+
+###input is raw_feature_bc_matrix.h5 file. Low-count-threshold is what exclude low UMI droplets
+cellbender remove-background \
+                 --input arch_20wk_ali_dob20220603_raw_feature_bc_matrix.h5 \
+                 --output arch_20wk_ali_dob20220603_raw_feature_bc_matrix_cellbender.h5 \
+                 --expected-cells 10000 \
+                 --total-droplets-included 20000 \
+                 --low-count-threshold 100 \
+		 --learning-rate 0.00005 \
+                 --epochs 150 
