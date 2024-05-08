@@ -1,0 +1,98 @@
+
+library(Seurat)
+library(data.table)
+library(Matrix)
+library(sctransform)
+library(dplyr)
+library(RColorBrewer)
+library(ggplot2)
+library(patchwork)
+library(DoubletFinder)
+library(ROCR)
+library(fields)
+library(KernSmooth)
+library(parallel)
+library(dittoSeq)
+
+clay2 <- Read10X_h5("clay_16wk_ali_raw_feature_bc_matrix_cellbender_filtered.h5")
+clay2_16wk_si <- saveRDS(clay2, file = "clay_16wk_ali_raw_feature_bc_matrix_cellbender_filtered.rds")
+
+
+
+clay_16wk_ali <- readRDS("clay_16wk_ali_raw_feature_bc_matrix_cellbender_filtered.rds")
+clay_16wk_ali <- CreateSeuratObject(counts = clay_16wk_ali, project = "clay_16wk_ali")
+
+clay_16wk_ali[["percent.mt"]] <- PercentageFeatureSet(clay_16wk_ali, pattern = "^MT-")
+
+
+clay_16wk_ali <- subset(clay_16wk_ali, subset = nFeature_RNA > 1250 & nFeature_RNA < 8000 & percent.mt < 15) 
+clay_16wk_ali <- SCTransform(clay_16wk_ali, vst.flavor = "v2", variable.features.n = 3004, vars.to.regress = "percent.mt")
+clay_16wk_ali@assays[["SCT"]]@var.features <- clay_16wk_ali@assays[["SCT"]]@var.features[-grep(pattern = "ZsGreen|TdTomato|Cre|Dre", x = clay_16wk_ali@assays[["SCT"]]@var.features)]
+
+clay_16wk_ali <- RunPCA(clay_16wk_ali, verbose = FALSE)
+ElbowPlot(clay_16wk_ali, 50)
+
+clay_16wk_ali <- RunUMAP(clay_16wk_ali, dims = 1:40)
+clay_16wk_ali <- FindNeighbors(clay_16wk_ali, dims = 1:40)
+clay_16wk_ali <- FindClusters(clay_16wk_ali, resolution = 1.5)
+p1 <- DimPlot(clay_16wk_ali, reduction = "umap", group.by = "orig.ident")
+p2 <- DimPlot(clay_16wk_ali, reduction = "umap", label = TRUE, repel = TRUE)
+
+
+pt <- table(Idents(clay_16wk_ali), clay_16wk_ali$orig.ident)
+pt <- as.data.frame(pt)
+pt$Var1 <- as.character(pt$Var1)
+
+write.csv(pt, file = "clay_16wk_ali_cellbender_noLTS_proportions.csv")
+saveRDS(clay_16wk_ali, file = "/path/clay_16wk_ali_dob20220408/clay_16wk_ali_cellbender_noLTS.rds")
+clay_16wk_ali.markers <- FindAllMarkers(clay_16wk_ali, assay = "SCT", only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+write.csv(clay_16wk_ali.markers, file = "clay_16wk_ali_cellbencer_noLTS_markers.csv")
+
+#Supplemental Table 5 = clay_16wk_ali_cellbencer_noLTS_markers.csv
+
+
+
+DefaultAssay(clay_16wk_ali) <- "RNA"
+Idents(object = clay_16wk_ali) <- "seurat_clusters"
+ul <- subset(x = clay_16wk_ali, idents = c(4,5,6), subset = TdTomato > 0)
+UL_zsgreenpos <- subset(x = ul, subset = ZsGreen > 0)
+UL_zsgreenneg <- subset(x = ul, subset = ZsGreen == 0)
+UL_zsgreenpos [["zsgreen"]] <- "pos"
+UL_zsgreenneg [["zsgreen"]] <- "neg"
+zsgreen_posneg <- merge(x = UL_zsgreenpos, y = UL_zsgreenneg, project = "zsgreen_posneg", merge.data = TRUE)
+Idents(object = zsgreen_posneg) <- "zsgreen"
+DefaultAssay(zsgreen_posneg) <- "SCT"
+zsgreen_ULneuron.markers <- FindMarkers(object = zsgreen_posneg, logfc.threshold = 0, assay = "SCT", ident.1 = "pos", ident.2 = "neg", recorrect_umi = FALSE)
+write.csv(zsgreen_ULneuron.markers, file = "clay16wkALI_yellow_v_red_ULneurons_markers_rna_cellbender_noLTS_SCT_redo.csv")
+
+#Supplemental Table 13 – “controlAP yellow_v_red” tab = clay16wkALI_yellow_v_red_ULneurons_markers_rna_cellbender_noLTS_SCT_redo.csv
+
+
+
+
+
+
+
+
+
+
+
+
+
+DefaultAssay(clay_16wk_ali) <- "RNA"
+Idents(object = clay_16wk_ali) <- "seurat_clusters"
+ul <- subset(x = clay_16wk_ali, idents = c(4,5,6), subset = TdTomato > 0 & GAD2 == 0 & DLX5 == 0)
+UL_zsgreenpos <- subset(x = ul, subset = ZsGreen > 0)
+UL_zsgreenneg <- subset(x = ul, subset = ZsGreen == 0)
+UL_zsgreenpos [["zsgreen"]] <- "pos"
+UL_zsgreenneg [["zsgreen"]] <- "neg"
+zsgreen_posneg <- merge(x = UL_zsgreenpos, y = UL_zsgreenneg, project = "zsgreen_posneg", merge.data = TRUE)
+Idents(object = zsgreen_posneg) <- "zsgreen"
+DefaultAssay(zsgreen_posneg) <- "SCT"
+zsgreen_ULneuron.markers <- FindMarkers(object = zsgreen_posneg, logfc.threshold = 0, assay = "SCT", ident.1 = "pos", ident.2 = "neg", recorrect_umi = FALSE)
+write.csv(zsgreen_ULneuron.markers, file = "clay16wkALI_yellow_v_red_ULneuronsTIGHT_markers_rna_cellbender_noLTS_SCT_redo.csv")
+
+#Fig. 6 (“Control-AP”) + Supplemental Table 12 – “controlAP yellow_v_red – noGABA” tab = clay16wkALI_yellow_v_red_ULneuronsTIGHT_markers_rna_cellbender_noLTS_SCT_redo.csv
+
+
+

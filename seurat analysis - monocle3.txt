@@ -1,0 +1,25 @@
+library(Signac)
+library(Seurat)
+library(SeuratWrappers)
+library(monocle3)
+library(Matrix)
+library(ggplot2)
+library(patchwork)
+set.seed(1234)
+#sample = previously established Seurat object
+all_sample <- readRDS("/path/sample_16wk_ali_cellbender_noLTS.rds")
+DefaultAssay(all_sample) <- "SCT"
+FeaturePlot(all_sample, features = c("LMO3", "EOMES", "SATB2", "HOPX"))
+
+sample.cds <- as.cell_data_set(all_sample)
+sample.cds <- cluster_cells(cds = sample.cds, reduction_method = "UMAP")
+sample.cds <- learn_graph(sample.cds, use_partition = TRUE)
+sample.cds <- order_cells(sample.cds, reduction_method = "UMAP")
+plot_cells(sample.cds,
+           color_cells_by = "pseudotime",
+           label_cell_groups=FALSE,
+           label_leaves=FALSE,
+           label_branch_points=FALSE,
+           graph_label_size=1.5)
+
+

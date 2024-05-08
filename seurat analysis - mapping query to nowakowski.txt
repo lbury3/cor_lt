@@ -1,0 +1,96 @@
+
+library(Seurat)
+library(data.table)
+library(Matrix)
+library(sctransform)
+library(dplyr)
+library(RColorBrewer)
+library(ggplot2)
+library(patchwork)
+library(DoubletFinder)
+library(ROCR)
+library(fields)
+library(KernSmooth)
+library(parallel)
+library(dittoSeq)
+
+#query.rds = previously established Seurat object
+query <- readRDS("query.rds")
+query <- CreateSeuratObject(counts = query@assays[["RNA"]]@counts, project = "query")
+
+
+
+
+
+
+query <- NormalizeData(query, verbose = FALSE)
+query <- FindVariableFeatures(query, selection.method = "vst", nfeatures = 2000, verbose = FALSE)
+
+
+
+
+
+
+
+
+
+mat <- fread("exprMatrix.tsv.gz")
+meta <- read.table("meta.tsv", header=T, sep="\t", as.is=T, row.names=1)
+genes = mat[,1][[1]]
+genes = gsub(".+[|]", "", genes)
+mat = data.frame(mat[,-1], row.names=genes)
+nowa <- CreateSeuratObject(counts = mat, min.cells = 3, min.genes = 200, project = "nowa", meta.data=meta)
+
+
+nowa <- NormalizeData(nowa, verbose = FALSE)
+nowa <- FindVariableFeatures(nowa, selection.method = "vst", nfeatures = 2000, verbose = FALSE)
+nowa <- ScaleData(nowa, verbose = FALSE)
+nowa <- RunPCA(nowa, verbose = FALSE)
+nowa <- FindNeighbors(nowa, dims = 1:40)
+nowa <- FindClusters(nowa, resolution = 1.5)
+nowa <- RunUMAP(nowa, reduction = "pca", dims = 1:40, verbose = FALSE)
+
+p2 <- DimPlot(nowa, reduction = "umap", group.by = "seurat_cluster")
+
+
+
+
+anchors <- FindTransferAnchors(reference = nowa, query = query, dims = 1:40, reference.reduction = "pca")
+predictions <- TransferData(anchorset = anchors, refdata = nowa$WGCNAcluster, dims = 1:40)
+query <- AddMetaData(query, metadata = predictions)
+
+table(query$predicted.id)
+
+
+
+
+
+
+
+
+nowa <- RunUMAP(nowa, dims = 1:40, reduction = "pca", return.model = TRUE)
+query <- MapQuery(anchorset = anchors, reference = nowa, query = query, refdata = list(celltype = "seurat_clusters"), reference.reduction = "pca", reduction.model = "umap")
+
+Idents(object = nowa) <- "seurat_clusters"
+p1 <- DimPlot(nowa, reduction = "umap", label = TRUE, label.size = 3, repel = TRUE) + NoLegend()
+p2 <- DimPlot(query, reduction = "ref.umap", group.by ="predicted.id",  repel = TRUE) + NoLegend()
+
+
+
+meta <- query@meta.data
+
+write.csv(meta, file = "queryasd_nowamapped_metadata_redo.csv")
+
+
+saveRDS(nowa, file = "nowakowski_for_mappingqueryasd_res1pt5.rds")
+saveRDS(query, file = "query_for_mappingtonowakowski_res1pt5.rds")
+
+
+Idents(object = nowa) <- "predicted.id"
+pt <- table(Idents(query), query$predicted.id)
+pt <- as.data.frame(pt)
+pt$Var1 <- as.character(pt$Var1)
+
+write.csv(pt, file = "query_predicted_id_proportions_redo.csv")
+#data for Supplemental Table 3 = query_predicted_id_proportions_redo.csv
+
