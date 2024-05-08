@@ -10,7 +10,7 @@ conda install pytorch torchvision -c pytorch
 git clone https://github.com/broadinstitute/CellBender.git
 pip install -e CellBender
 
-cd /mnt/rstor/genetics/Wynshaw-BorisLab/lab139/analysis_w_newref/clay_16wk_si_dob20210816/
+cd /path/clay_16wk_si_dob20210816/
 
 ###input is raw_feature_bc_matrix.h5 file. Low-count-threshold is what exclude low UMI droplets
 cellbender remove-background \
