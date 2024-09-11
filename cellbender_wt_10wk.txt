@@ -16,7 +16,7 @@ cd /path/correction_10wk_ali_dob20220603/
 
 ###input is raw_feature_bc_matrix.h5 file. Low-count-threshold is what exclude low UMI droplets
 cellbender remove-background \
-                 --input correction_10wk_ali_dob20220603_raw_feature_bc_matrix.h5 \
+                 --input CTNNB1_WT_10wk_raw_feature_bc_matrix.h5 \
                  --output correction_10wk_ali_dob20220603_raw_feature_bc_matrix_cellbender.h5 \
                  --expected-cells 10000 \
                  --total-droplets-included 24000 \
