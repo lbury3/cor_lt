@@ -14,7 +14,7 @@ cd /path/clay_16wk_ali_dob20220408/
 
 ###input is raw_feature_bc_matrix.h5 file. Low-count-threshold is what exclude low UMI droplets
 cellbender remove-background \
-                 --input clay_16wk_ali_raw_feature_bc_matrix.h5 \
+                 --input control_AP_raw_feature_bc_matrix.h5 \
                  --output clay_16wk_ali_raw_feature_bc_matrix_cellbender.h5 \
                  --expected-cells 10000 \
                  --total-droplets-included 26000 \
